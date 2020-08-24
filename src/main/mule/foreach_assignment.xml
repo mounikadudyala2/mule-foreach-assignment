@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<file:config name="File_Config" doc:name="File Config" doc:id="2120d47a-fb82-4a04-95bf-3fbf68df78d6" >
+		<file:connection workingDir="/Users/mounikad/Desktop/mulesoft/day4/forEach/Archive" />
+	</file:config>
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="946b1a8f-8234-4b72-a3b9-2d1c01ea9021" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="foreach_assignmentFlow" doc:id="664de436-3664-452c-9887-8c73d6608106" >
+		<http:listener doc:name="Listener" doc:id="42e490aa-18d6-46de-a805-f4622d36d010" config-ref="HTTP_Listener_config" path="/foreach-assignment">
+			<http:response>
+				<http:body ><![CDATA[#[output appllication/json ---
+{
+  "ReturnCode": "200",
+  "ReturnText": "File(s) Archived Successfully!!"
+}]]]></http:body>
+				<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Key" : "Value"
+}]]]></http:headers>
+			</http:response>
+			<http:error-response >
+				<http:body ><![CDATA[#[output appllication/json --- error.description]]]></http:body>
+			</http:error-response>
+		</http:listener>
+		<set-variable value="#[message.payload]" doc:name="Set Variable" doc:id="da4ef27a-35f4-4586-baa6-cc9979f3a930" variableName="Request"/>
+		<logger level="INFO" doc:name="Logger" doc:id="10b247df-08cb-4598-83ea-16b4e12dcdbe" message="#[vars.Request]"/>
+		<ee:transform doc:name="Transform Message" doc:id="fa267fb8-6f97-4d2a-bf0a-6798f703ef56" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+vars.Request.ArchiveFiles.FileNames]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="SourcePath" ><![CDATA[%dw 2.0
+output application/json
+---
+vars.Request.ArchiveFiles.FileSource]]></ee:set-variable>
+				<ee:set-variable variableName="TargetPath" ><![CDATA[%dw 2.0
+output application/json
+---
+vars.Request.ArchiveFiles.FileTarget]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<foreach doc:name="For Each" doc:id="1e326b9d-67a7-424e-ac2a-eee95fe82905" collection="#[vars.Request.ArchiveFiles.FileNames]">
+			<ee:transform doc:name="Transform Message" doc:id="3d5b974f-6f0e-4ca6-9129-3a15db8bbc34" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+
+---
+payload]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<logger level="INFO" doc:name="Logger" doc:id="18099200-d76f-4464-b12d-8182720360ad" message="for each started-#[payload]" />
+			<file:copy doc:name="Copy" doc:id="c37842d4-52f9-4bbe-a444-044f156d9e23" config-ref="File_Config" sourcePath="#[vars.SourcePath ++'/'++ payload.FileName]" targetPath="#[vars.TargetPath]" renameTo="#['copy'++ payload.FileName]" overwrite="true"/>
+		</foreach>
+		<logger level="INFO" doc:name="Logger" doc:id="3596d3f1-3bd6-4a3b-a509-4c6c8e1e2fe5" message="archived successfully"/>
+	</flow>
+</mule>

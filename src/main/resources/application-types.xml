@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="forEachText" format="java">
+      <types:shape format="raml"><![CDATA[#%RAML 1.0 DataType
+type: string]]></types:shape>
+    </types:type>
+    <types:type name="forEachXml" format="xml">
+      <types:example format="xml" element="ArchiveFiles" location="examples/forEach.xml"/>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#fa267fb8-6f97-4d2a-bf0a-6798f703ef56">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="forEachXml"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>
